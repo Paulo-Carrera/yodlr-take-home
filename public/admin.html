@@ -8,6 +8,7 @@
 <body class="p-4">
   <div class="container">
     <h1 class="mb-4">Admin Panel</h1>
+    <a href="index.html" class="btn btn-link mb-3">← Back to Home</a>
     <table class="table table-bordered table-hover">
       <thead class="table-light">
         <tr>
@@ -16,6 +17,7 @@
           <th>Last</th>
           <th>Email</th>
           <th>Status</th>
+          <th>Change State</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -26,7 +28,6 @@
   <script>
     const userTableBody = document.getElementById('userTableBody');
 
-    // Fetch and display users
     async function loadUsers() {
       const res = await fetch('/users');
       const users = await res.json();
@@ -35,6 +36,7 @@
 
       users.forEach(user => {
         const row = document.createElement('tr');
+
         row.innerHTML = `
           <td>${user.id}</td>
           <td>${user.firstName}</td>
@@ -42,29 +44,55 @@
           <td>${user.email}</td>
           <td><span class="badge bg-${getBadgeColor(user.state)}">${user.state}</span></td>
           <td>
-            <button class="btn btn-success btn-sm me-1" onclick="updateState(${user.id}, 'approved')">Approve</button>
-            <button class="btn btn-danger btn-sm" onclick="updateState(${user.id}, 'denied')">Deny</button>
+            <select class="form-select form-select-sm" id="state-${user.id}">
+              <option value="pending" ${user.state === 'pending' ? 'selected' : ''}>Pending</option>
+              <option value="approved" ${user.state === 'approved' ? 'selected' : ''}>Approved</option>
+              <option value="denied" ${user.state === 'denied' ? 'selected' : ''}>Denied</option>
+            </select>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-primary me-1" onclick="saveDropdownState(${user.id})">Save</button>
+            <button class="btn btn-sm btn-success me-1" onclick="updateState(${user.id}, 'approved')">Approve</button>
+            <button class="btn btn-sm btn-danger" onclick="updateState(${user.id}, 'denied')">Deny</button>
           </td>
         `;
+
         userTableBody.appendChild(row);
       });
     }
 
     function getBadgeColor(state) {
-      return state === 'approved' ? 'success' : state === 'denied' ? 'danger' : 'secondary';
+      switch (state) {
+        case 'approved': return 'success';
+        case 'denied': return 'danger';
+        case 'pending': return 'secondary';
+        default: return 'dark';
+      }
     }
 
-    // Send PATCH request to update user state
     async function updateState(userId, newState) {
+      const userRes = await fetch(`/users/${userId}`);
+      const user = await userRes.json();
+
+      user.state = newState;
+
       await fetch(`/users/${userId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ state: newState })
+        body: JSON.stringify(user)
       });
-      loadUsers(); // Refresh list
+
+      loadUsers();
+    }
+
+    async function saveDropdownState(userId) {
+      const select = document.getElementById(`state-${userId}`);
+      const newState = select.value;
+      await updateState(userId, newState);
     }
 
     loadUsers();
   </script>
 </body>
 </html>
+
