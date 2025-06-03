@@ -53,5 +53,15 @@ router.put('/:id', function(req, res, next) {
   res.json(user);
 });
 
+router.patch('/:id', function(req, res, next){
+  var user = users[req.params.id];
+  if (!user){
+    return next();
+  }
+  Object.assign(user, req.body);
+  log.info('Updating user', user);
+  res.json(user);
+});
+
 
 module.exports = router;
